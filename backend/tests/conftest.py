@@ -28,6 +28,19 @@ LOGIN_PAYLOAD = {
 }
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _fast_bcrypt() -> Iterator[None]:
+    """Use the minimum bcrypt cost in tests; production keeps the default (12 rounds)."""
+    import bcrypt
+
+    original = bcrypt.gensalt
+    bcrypt.gensalt = lambda rounds=4, prefix=b"2b": original(4, prefix)  # type: ignore[assignment]
+    try:
+        yield
+    finally:
+        bcrypt.gensalt = original  # type: ignore[assignment]
+
+
 @pytest.fixture(autouse=True)
 def _fresh_database() -> Iterator[None]:
     drop_all()
