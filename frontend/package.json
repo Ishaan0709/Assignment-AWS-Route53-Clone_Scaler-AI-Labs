@@ -1,0 +1,41 @@
+{
+  "name": "route53-clone-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@cloudscape-design/collection-hooks": "^1",
+    "@cloudscape-design/components": "^3",
+    "@cloudscape-design/global-styles": "^1",
+    "@tanstack/react-query": "^5",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@testing-library/react": "^16",
+    "@types/node": "^24.19.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9",
+    "eslint-config-next": "^15",
+    "eslint-config-prettier": "^10",
+    "jsdom": "^26",
+    "prettier": "^3",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  }
+}
