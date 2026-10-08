@@ -26,7 +26,12 @@ from app.schemas.dns_record import RecordBase
 from app.services import record_service
 from app.services.domain import display_name, ensure_dot
 from app.services.record_service import PreparedRecord
-from app.services.validators import DEFAULT_TTL, USER_RECORD_TYPES
+from app.services.validators import (
+    DEFAULT_TTL,
+    RECORD_TYPES,
+    USER_RECORD_TYPES,
+    validate_values,
+)
 from app.services.zone_service import name_servers_of
 
 MAX_IMPORT_BYTES = 1_000_000
@@ -165,11 +170,8 @@ def parse_zone_text(text: str, zone_name: str) -> ParseResult:
                 check_origin=False,
                 allow_include=False,
             )
-        except dns.exception.DNSException as exc:
-            result.errors.append((line_no, _clean_dns_error(str(exc))))
-            continue
         except Exception as exc:
-            result.errors.append((line_no, _clean_dns_error(str(exc)) or "Could not parse record."))
+            result.errors.append((line_no, _describe_failure(record_text, exc)))
             continue
 
         for name, node in zone.nodes.items():
@@ -189,6 +191,43 @@ def parse_zone_text(text: str, zone_name: str) -> ParseResult:
 def _clean_dns_error(message: str) -> str:
     # dnspython prefixes messages with "<string>:3: "; strip that location noise.
     return re.sub(r"^<string>:\d+:\s*", "", message).strip()
+
+
+def _describe_failure(record_text: str, exc: Exception) -> str:
+    """Turn a dnspython parse failure into a precise message using our own validators.
+
+    Layout: ``owner [ttl] [IN] TYPE rdata``. If the type is one we support, validating the
+    rdata gives a message like "'nope' is not a valid IPv4 address." instead of dnspython's
+    generic "Text input is malformed.".
+    """
+    tokens = record_text.split()
+    rest = tokens[1:]
+    if rest and _TTL_RE.match(rest[0]):
+        rest = rest[1:]
+    if rest and rest[0].upper() in ("IN", "CH", "HS"):
+        rest = rest[1:]
+    if not rest:
+        return "Record is missing a type and value."
+    rtype = rest[0].upper()
+    rdata = " ".join(rest[1:])
+    if rtype in RECORD_TYPES:
+        if not rdata:
+            return f"{rtype} record is missing a value."
+        try:
+            validate_values(rtype, [rdata])
+        except ApiError as err:
+            return err.message
+    elif not dns.rdatatype.is_metatype(_safe_rdatatype(rtype)) and _safe_rdatatype(rtype) == 0:
+        return f"Unknown record type '{rest[0]}'."
+    generic = _clean_dns_error(str(exc))
+    return generic or "Could not parse record."
+
+
+def _safe_rdatatype(text: str) -> int:
+    try:
+        return int(dns.rdatatype.from_text(text))
+    except Exception:
+        return 0
 
 
 def _merge(records: list[ParsedRecord]) -> list[ParsedRecord]:
