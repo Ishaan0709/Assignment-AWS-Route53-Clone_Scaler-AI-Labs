@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-from sqlalchemy import Select, asc, case, desc, exists, or_, select
+from sqlalchemy import Select, and_, asc, case, desc, exists, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import BadRequestError, ConflictError, NotFoundError
@@ -29,7 +29,11 @@ _SORTABLE = {
 # Route 53 shows the apex NS then SOA first, then everything alphabetically by name/type.
 _DEFAULT_ORDER = (
     desc(DnsRecord.is_default),
-    case((DnsRecord.type == "NS", 0), (DnsRecord.type == "SOA", 1), else_=2),
+    case(
+        (and_(DnsRecord.is_default.is_(True), DnsRecord.type == "NS"), 0),
+        (and_(DnsRecord.is_default.is_(True), DnsRecord.type == "SOA"), 1),
+        else_=2,
+    ),
     asc(DnsRecord.name),
     asc(DnsRecord.type),
     asc(DnsRecord.set_identifier),
