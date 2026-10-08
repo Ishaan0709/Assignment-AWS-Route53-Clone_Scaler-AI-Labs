@@ -340,15 +340,19 @@ def test_default_ordering_puts_apex_ns_then_soa_first(auth_client: TestClient, z
             {"name": "aaa", "type": "TXT", "values": ['"x"']},
             {"name": "aaa", "type": "A", "values": ["192.0.2.2"]},
             {"name": "", "type": "A", "values": ["192.0.2.3"]},
+            {"name": "sub", "type": "NS", "values": ["ns-9.awsdns-09.net."]},
+            {"name": "_sip._tcp", "type": "SRV", "values": ["10 5 5060 sip.example.com."]},
         ],
     )
     items = list_records(auth_client, zone)["items"]
     assert [(r["name"], r["type"]) for r in items] == [
         ("example.com.", "NS"),
         ("example.com.", "SOA"),
+        ("_sip._tcp.example.com.", "SRV"),
         ("aaa.example.com.", "A"),
         ("aaa.example.com.", "TXT"),
         ("example.com.", "A"),
+        ("sub.example.com.", "NS"),  # a delegation NS is an ordinary record
         ("zzz.example.com.", "A"),
     ]
 
