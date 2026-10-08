@@ -53,10 +53,24 @@ def test_parse_handles_directives_parentheses_comments_and_continuations() -> No
     assert by_key[("example.com.", "CAA")].values == ['0 issue "letsencrypt.org"']
 
 
-def test_parse_reports_line_numbers_for_bad_lines() -> None:
-    text = "www IN A 192.0.2.1\nbad IN FOO something\nmail IN A not-an-ip\nok IN A 192.0.2.3\n"
+def test_parse_reports_line_numbers_and_precise_messages_for_bad_lines() -> None:
+    text = (
+        "www IN A 192.0.2.1\n"
+        "bad IN FOO something\n"
+        "mail IN A not-an-ip\n"
+        "ok IN A 192.0.2.3\n"
+        "empty 300 IN MX\n"
+        "mx IN MX 10\n"
+        "nothing\n"
+    )
     result = parse_zone_text(text, "example.com.")
-    assert [line for line, _ in result.errors] == [2, 3]
+    assert [line for line, _ in result.errors] == [2, 3, 5, 6, 7]
+    messages = dict(result.errors)
+    assert messages[2] == "Unknown record type 'FOO'."
+    assert messages[3] == "'not-an-ip' is not a valid IPv4 address."
+    assert messages[5] == "MX record is missing a value."
+    assert "MX value must be" in messages[6]
+    assert messages[7] == "Record is missing a type and value."
     assert [r.name for r in result.records] == ["www.example.com.", "ok.example.com."]
 
 
