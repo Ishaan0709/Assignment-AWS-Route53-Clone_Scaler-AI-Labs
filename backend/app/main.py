@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.db.session import SessionLocal, create_all
-from app.routers import auth
+from app.routers import auth, bind, hosted_zones, records
 from app.seed import seed_if_empty
 
 API_PREFIX = "/api"
@@ -17,6 +17,9 @@ log = logging.getLogger(__name__)
 
 TAGS_METADATA = [
     {"name": "auth", "description": "Mocked IAM sign-in backed by a real `sessions` table."},
+    {"name": "hosted zones", "description": "Hosted zone CRUD, search, pagination and tags."},
+    {"name": "records", "description": "DNS record CRUD inside a hosted zone, with validation."},
+    {"name": "zone files", "description": "BIND import with preview, JSON/BIND export."},
     {"name": "meta", "description": "Service health."},
 ]
 
@@ -64,6 +67,9 @@ def create_app() -> FastAPI:
         return {"status": "ok", "service": settings.app_name}
 
     app.include_router(auth.router, prefix=API_PREFIX)
+    app.include_router(hosted_zones.router, prefix=API_PREFIX)
+    app.include_router(records.router, prefix=API_PREFIX)
+    app.include_router(bind.router, prefix=API_PREFIX)
     return app
 
 
