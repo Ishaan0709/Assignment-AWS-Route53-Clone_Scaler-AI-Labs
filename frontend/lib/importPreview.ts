@@ -1,7 +1,9 @@
 import type { ImportRecordPreview } from "@/types/api";
 
 /** Counts of records the dry run would create, grouped by DNS type. */
-export function importTypeBreakdown(records: Pick<ImportRecordPreview, "type" | "status">[]): string {
+export function importTypeBreakdown(
+  records: Pick<ImportRecordPreview, "type" | "status">[],
+): string {
   const counts = new Map<string, number>();
   for (const record of records) {
     if (record.status !== "new") continue;
