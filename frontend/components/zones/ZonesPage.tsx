@@ -6,6 +6,7 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { BulkDeleteZonesModal } from "@/components/zones/BulkDeleteZonesModal";
 import { DeleteZoneModal } from "@/components/zones/DeleteZoneModal";
 import { EditZoneModal } from "@/components/zones/EditZoneModal";
 import { ZonesTable } from "@/components/zones/ZonesTable";
@@ -17,10 +18,11 @@ type ModalKind = "edit" | "delete" | null;
 /** `/hostedzones`: table with selection-driven actions plus the edit and delete modals. */
 export function ZonesPage() {
   const router = useRouter();
-  const [selectedZone, setSelectedZone] = useState<HostedZone | null>(null);
+  const [selectedZones, setSelectedZones] = useState<HostedZone[]>([]);
   const [modal, setModal] = useState<ModalKind>(null);
   const closeModal = useCallback(() => setModal(null), []);
-  const onSelectionChange = useCallback((zone: HostedZone | null) => setSelectedZone(zone), []);
+  const onSelectionChange = useCallback((zones: HostedZone[]) => setSelectedZones(zones), []);
+  const selectedZone = selectedZones.length === 1 ? (selectedZones[0] ?? null) : null;
 
   const createButton = (
     <Button
@@ -35,7 +37,7 @@ export function ZonesPage() {
   return (
     <ContentLayout breadcrumbs={<Breadcrumbs items={[{ text: "Hosted zones" }]} />}>
       <ZonesTable
-        selectedZone={selectedZone}
+        selectedZones={selectedZones}
         onSelectionChange={onSelectionChange}
         emptyAction={createButton}
         actions={
@@ -55,7 +57,7 @@ export function ZonesPage() {
               Edit
             </Button>
             <Button
-              disabled={!selectedZone}
+              disabled={selectedZones.length === 0}
               onClick={() => setModal("delete")}
               data-testid="delete-zone"
             >
@@ -73,7 +75,12 @@ export function ZonesPage() {
       <DeleteZoneModal
         zone={modal === "delete" ? selectedZone : null}
         onDismiss={closeModal}
-        onDeleted={() => setSelectedZone(null)}
+        onDeleted={() => setSelectedZones([])}
+      />
+      <BulkDeleteZonesModal
+        zones={modal === "delete" && selectedZones.length > 1 ? selectedZones : []}
+        onDismiss={closeModal}
+        onFinished={() => setSelectedZones([])}
       />
     </ContentLayout>
   );

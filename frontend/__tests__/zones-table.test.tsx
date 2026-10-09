@@ -33,11 +33,11 @@ function queryResult(overrides: Partial<ZonesResult>): ZonesResult {
   } as unknown as ZonesResult;
 }
 
-function renderTable(selected: ReturnType<typeof makeZone> | null = null) {
+function renderTable(selected: ReturnType<typeof makeZone>[] = []) {
   const onSelectionChange = vi.fn();
   const utils = renderWithProviders(
     <ZonesTable
-      selectedZone={selected}
+      selectedZones={selected}
       onSelectionChange={onSelectionChange}
       actions={<button type="button">Create hosted zone</button>}
       emptyAction={<button type="button">Create hosted zone (empty)</button>}
@@ -116,9 +116,9 @@ describe("ZonesTable", () => {
     );
     const { onSelectionChange } = renderTable();
 
-    await userEvent.click(screen.getByRole("radio", { name: zone.name }));
+    await userEvent.click(screen.getByRole("checkbox", { name: zone.name }));
 
-    expect(onSelectionChange).toHaveBeenCalledWith(zone);
+    expect(onSelectionChange).toHaveBeenCalledWith([zone]);
   });
 
   it("shows the empty state with the create action when there are no zones", () => {

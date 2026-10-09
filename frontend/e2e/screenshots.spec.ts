@@ -39,11 +39,15 @@ const ZONES_API = /\/api\/hostedzones(\?.*)?$/;
 const rows = (page: Page) => page.getByTestId("zones-table").locator("tbody tr");
 
 async function selectZone(page: Page, name: string) {
-  await rows(page)
+  const checkbox = rows(page)
     .filter({ has: page.getByRole("link", { name, exact: true }) })
     .first()
-    .getByRole("radio")
-    .check({ force: true });
+    .getByRole("checkbox");
+  await checkbox.evaluate((input) => {
+    const target = input.parentElement?.parentElement ?? input;
+    target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(checkbox).toBeChecked();
 }
 
 test.describe("hosted zones screenshots", () => {

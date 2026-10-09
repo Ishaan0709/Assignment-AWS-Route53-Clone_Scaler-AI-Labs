@@ -48,7 +48,12 @@ async function clearFilter(page: Page) {
 }
 
 async function selectRow(page: Page, name: string) {
-  await rowByName(page, name).getByRole("radio").check({ force: true });
+  const checkbox = rowByName(page, name).getByRole("checkbox");
+  await checkbox.evaluate((input) => {
+    const target = input.parentElement?.parentElement ?? input;
+    target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(checkbox).toBeChecked();
 }
 
 async function chooseOption(select: Locator, page: Page, label: string | RegExp) {
