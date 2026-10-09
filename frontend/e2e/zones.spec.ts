@@ -156,11 +156,19 @@ test.describe("hosted zones list", () => {
 
   test("sorting by Record count flips the order", async ({ page }) => {
     const recordCountHeader = columnHeader(page, "Record count");
-    await clickableColumnHeader(page, "Record count").click();
+    const sortedRequest = (order: "asc" | "desc") =>
+      page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/hostedzones?") &&
+          response.url().includes("sort=record_count") &&
+          response.url().includes(`order=${order}`),
+      );
+
+    await Promise.all([sortedRequest("asc"), clickableColumnHeader(page, "Record count").click()]);
     await expect(recordCountHeader).toHaveAttribute("aria-sort", "ascending");
     await expect(rows(page).first()).toContainText("tenant-");
 
-    await clickableColumnHeader(page, "Record count").click();
+    await Promise.all([sortedRequest("desc"), clickableColumnHeader(page, "Record count").click()]);
     await expect(recordCountHeader).toHaveAttribute("aria-sort", "descending");
     await expect(rows(page).first()).toContainText("example.com");
   });
