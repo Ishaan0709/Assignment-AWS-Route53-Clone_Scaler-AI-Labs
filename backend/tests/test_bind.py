@@ -295,6 +295,18 @@ def test_export_bind_format(auth_client: TestClient, zone: dict) -> None:
     assert "172800\tIN\tNS\t" in text
 
 
+def test_export_csv_lists_every_record(auth_client: TestClient, zone: dict) -> None:
+    add_record(auth_client, zone["id"], name="www", values=["192.0.2.1", "192.0.2.2"])
+    response = auth_client.get(f"/api/hostedzones/{zone['id']}/export", params={"format": "csv"})
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == 'attachment; filename="example.com.csv"'
+    assert response.headers["content-type"].startswith("text/csv")
+    lines = response.text.strip().splitlines()
+    assert lines[0].startswith("name,type,ttl,")
+    assert any("www.example.com.,A," in line and "192.0.2.1; 192.0.2.2" in line for line in lines)
+    assert any(",NS," in f",{line}," or line.split(",")[1] == "NS" for line in lines[1:])
+
+
 def test_export_default_format_is_json(auth_client: TestClient, zone: dict) -> None:
     response = auth_client.get(f"/api/hostedzones/{zone['id']}/export")
     assert response.headers["content-disposition"].endswith('example.com.json"')

@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
-from app.db.session import SessionLocal, create_all
+from app.db.migrate import ensure_schema
+from app.db.session import SessionLocal, _is_memory_sqlite, create_all
 from app.routers import auth, bind, hosted_zones, records
 from app.seed import seed_if_empty
 
@@ -19,7 +20,7 @@ TAGS_METADATA = [
     {"name": "auth", "description": "Mocked IAM sign-in backed by a real `sessions` table."},
     {"name": "hosted zones", "description": "Hosted zone CRUD, search, pagination and tags."},
     {"name": "records", "description": "DNS record CRUD inside a hosted zone, with validation."},
-    {"name": "zone files", "description": "BIND import with preview, JSON/BIND export."},
+    {"name": "zone files", "description": "BIND import with preview, JSON/BIND/CSV export."},
     {"name": "meta", "description": "Service health."},
 ]
 
@@ -27,7 +28,10 @@ TAGS_METADATA = [
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    create_all()
+    if _is_memory_sqlite(settings.database_url):
+        create_all()
+    else:
+        ensure_schema(settings.database_url)
     if settings.seed_on_startup:
         with SessionLocal() as db:
             if seed_if_empty(db, many=settings.seed_many):

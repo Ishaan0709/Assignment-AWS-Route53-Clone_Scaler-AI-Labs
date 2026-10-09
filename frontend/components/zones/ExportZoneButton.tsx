@@ -11,7 +11,7 @@ interface ExportZoneButtonProps {
   fileBase: string;
 }
 
-/** JSON and BIND downloads. The API sets the filename to `name.json` or `name.zone`. */
+/** JSON, BIND and CSV downloads. The API names the file `name.json`, `name.zone` or `name.csv`. */
 export function ExportZoneButton({ zoneId, fileBase }: ExportZoneButtonProps) {
   const notify = useNotifications();
   return (
@@ -20,11 +20,13 @@ export function ExportZoneButton({ zoneId, fileBase }: ExportZoneButtonProps) {
       items={[
         { id: "json", text: "JSON" },
         { id: "bind", text: "BIND" },
+        { id: "csv", text: "CSV" },
       ]}
       onItemClick={({ detail }) => {
-        const format: ExportFormat = detail.id === "bind" ? "bind" : "json";
-        const fallback = `${fileBase}.${format === "bind" ? "zone" : "json"}`;
-        void downloadZoneExport(zoneId, format, fallback)
+        const format: ExportFormat =
+          detail.id === "bind" || detail.id === "csv" ? detail.id : "json";
+        const extension = format === "bind" ? "zone" : format;
+        void downloadZoneExport(zoneId, format, `${fileBase}.${extension}`)
           .then((filename) => notify.success(`Downloaded ${filename}.`))
           .catch(() => notify.error("The zone file could not be downloaded."));
       }}

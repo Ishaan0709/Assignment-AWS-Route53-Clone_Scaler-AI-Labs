@@ -28,4 +28,4 @@ class ImportSummary(BaseModel):
     records: list[ImportRecordPreview]
 
 
-ExportFormat = Literal["json", "bind"]
+ExportFormat = Literal["json", "bind", "csv"]

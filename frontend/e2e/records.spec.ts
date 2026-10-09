@@ -143,6 +143,11 @@ test.describe("hosted zone detail", () => {
       await page.getByRole("menuitem", { name: "BIND" }).click();
       expect((await bindDownload).suggestedFilename()).toBe(`${zone.label}.zone`);
 
+      const csvDownload = page.waitForEvent("download");
+      await page.getByTestId("export-zone").click();
+      await page.getByRole("menuitem", { name: "CSV" }).click();
+      expect((await csvDownload).suggestedFilename()).toBe(`${zone.label}.csv`);
+
       await expect(page.getByTestId("default-record")).toHaveCount(2);
       await selectRow(defaultRow(page, "NS"));
       await expect(page.getByTestId("delete-record")).toBeDisabled();

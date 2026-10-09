@@ -68,12 +68,13 @@ async def import_zone_file(
     "/export",
     summary="Export hosted zone",
     description=(
-        "Downloads the zone and its records as JSON (`format=json`) or as a BIND zone file "
-        "(`format=bind`). The response carries a `Content-Disposition: attachment` header."
+        "Downloads the zone and its records as JSON (`format=json`), a BIND zone file "
+        "(`format=bind`), or CSV (`format=csv`). The response carries a "
+        "`Content-Disposition: attachment` header."
     ),
     responses={
         200: {
-            "content": {"application/json": {}, "text/plain": {}},
+            "content": {"application/json": {}, "text/plain": {}, "text/csv": {}},
             "description": "File download",
         },
         **_NOT_FOUND,
@@ -92,6 +93,9 @@ def export_zone(
     if format == "bind":
         body = bind_io.export_bind(zone, records)
         media_type = "text/plain; charset=utf-8"
+    elif format == "csv":
+        body = bind_io.export_csv(zone, records)
+        media_type = "text/csv; charset=utf-8"
     else:
         body = bind_io.export_json(zone, records)
         media_type = "application/json"
