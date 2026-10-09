@@ -366,10 +366,10 @@ def is_empty(db: Session) -> bool:
     return users == 0 and zones == 0
 
 
-def seed_if_empty(db: Session) -> bool:
+def seed_if_empty(db: Session, *, many: bool = False) -> bool:
     if not is_empty(db):
         return False
-    result = seed(db)
+    result = seed(db, many=many)
     log.info("Seeded demo data: %s", result)
     return True
 
