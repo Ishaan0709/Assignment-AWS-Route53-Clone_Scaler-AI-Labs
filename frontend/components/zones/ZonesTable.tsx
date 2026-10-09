@@ -36,8 +36,8 @@ import { formatNumber, pluralize } from "@/lib/format";
 import type { HostedZone, ZoneSortField } from "@/types/api";
 
 interface ZonesTableProps {
-  selectedZone: HostedZone | null;
-  onSelectionChange: (zone: HostedZone | null) => void;
+  selectedZones: HostedZone[];
+  onSelectionChange: (zones: HostedZone[]) => void;
   /** Header action buttons (View details, Edit, Delete, Create hosted zone). */
   actions: ReactNode;
   /** Shown in the empty state (no zones at all). */
@@ -47,7 +47,7 @@ interface ZonesTableProps {
 const DEFAULT_SORT: TableProps.SortingColumn<HostedZone> = { sortingField: "name" };
 
 export function ZonesTable({
-  selectedZone,
+  selectedZones,
   onSelectionChange,
   actions,
   emptyAction,
@@ -97,11 +97,17 @@ export function ZonesTable({
   // Keep the selection in sync with fresh data (record counts, descriptions) and
   // drop it when the row is no longer on screen.
   useEffect(() => {
-    if (!selectedZone || zones.data === undefined) return;
-    const fresh = zones.data.items.find((zone) => zone.id === selectedZone.id);
-    if (!fresh) onSelectionChange(null);
-    else if (fresh !== selectedZone) onSelectionChange(fresh);
-  }, [zones.data, selectedZone, onSelectionChange]);
+    if (selectedZones.length === 0 || zones.data === undefined) return;
+    const byId = new Map(zones.data.items.map((zone) => [zone.id, zone]));
+    const next = selectedZones.flatMap((zone) => {
+      const fresh = byId.get(zone.id);
+      return fresh ? [fresh] : [];
+    });
+    const changed =
+      next.length !== selectedZones.length ||
+      next.some((zone, index) => zone !== selectedZones[index]);
+    if (changed) onSelectionChange(next);
+  }, [zones.data, selectedZones, onSelectionChange]);
 
   const emptyState = zones.isError ? (
     <Box padding={{ vertical: "l" }} data-testid="zones-error">
@@ -163,9 +169,9 @@ export function ZonesTable({
       stripedRows={preferences.stripedRows}
       loading={loading}
       loadingText="Loading hosted zones"
-      selectionType="single"
-      selectedItems={selectedZone ? [selectedZone] : []}
-      onSelectionChange={({ detail }) => onSelectionChange(detail.selectedItems[0] ?? null)}
+      selectionType="multi"
+      selectedItems={selectedZones}
+      onSelectionChange={({ detail }) => onSelectionChange(detail.selectedItems)}
       sortingColumn={sortingColumn}
       sortingDescending={sortingDescending}
       onSortingChange={({ detail }) => {
