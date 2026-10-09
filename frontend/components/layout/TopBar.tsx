@@ -18,7 +18,7 @@ interface TopBarProps {
 
 /** Sticky dark console header (`#top-nav`), modelled on the AWS Management Console. */
 export function TopBar({ user }: TopBarProps) {
-  const { mode, setMode } = useTheme();
+  const { mode, setMode, density, setDensity } = useTheme();
   const { logout, isPending } = useLogout();
   const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
@@ -55,6 +55,20 @@ export function TopBar({ user }: TopBarProps) {
     { kind: "label", id: "visual", text: "Visual mode" },
     { id: "light", text: "Light", checked: mode === "light", onSelect: () => setMode("light") },
     { id: "dark", text: "Dark", checked: mode === "dark", onSelect: () => setMode("dark") },
+    { kind: "divider", id: "density-divider" },
+    { kind: "label", id: "density", text: "Density" },
+    {
+      id: "comfortable",
+      text: "Comfortable",
+      checked: density === "comfortable",
+      onSelect: () => setDensity("comfortable"),
+    },
+    {
+      id: "compact",
+      text: "Compact",
+      checked: density === "compact",
+      onSelect: () => setDensity("compact"),
+    },
   ];
 
   const regionItems: HeaderMenuItem[] = [
