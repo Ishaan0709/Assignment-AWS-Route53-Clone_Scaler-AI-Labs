@@ -38,7 +38,7 @@ export default defineConfig({
       url: `http://localhost:${backendPort}/api/health`,
       reuseExistingServer: !isCI,
       timeout: 120_000,
-      env: { DATABASE_URL: "sqlite:///./e2e.db", SEED_ON_STARTUP: "true" },
+      env: { DATABASE_URL: "sqlite:///./e2e.db", SEED_ON_STARTUP: "true", SEED_MANY: "true" },
     },
     {
       command: isCI
