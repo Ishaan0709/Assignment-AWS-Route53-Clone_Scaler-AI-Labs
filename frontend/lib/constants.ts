@@ -66,7 +66,42 @@ export const STORAGE_KEYS = {
   theme: "r53.theme",
   density: "r53.density",
   rememberedAccount: "r53.rememberedAccount",
+  zonesPreferences: "r53.zones.preferences",
 } as const;
+
+/** Regions offered when associating a VPC with a private hosted zone (mocked). */
+export const AWS_REGIONS = [
+  { value: "us-east-1", label: "US East (N. Virginia)" },
+  { value: "us-east-2", label: "US East (Ohio)" },
+  { value: "us-west-1", label: "US West (N. California)" },
+  { value: "us-west-2", label: "US West (Oregon)" },
+  { value: "eu-west-1", label: "Europe (Ireland)" },
+  { value: "eu-west-2", label: "Europe (London)" },
+  { value: "eu-central-1", label: "Europe (Frankfurt)" },
+  { value: "ap-south-1", label: "Asia Pacific (Mumbai)" },
+  { value: "ap-southeast-1", label: "Asia Pacific (Singapore)" },
+  { value: "ap-southeast-2", label: "Asia Pacific (Sydney)" },
+  { value: "ap-northeast-1", label: "Asia Pacific (Tokyo)" },
+  { value: "sa-east-1", label: "South America (São Paulo)" },
+] as const;
+
+/** Mocked VPCs per region for the private hosted zone form. */
+export const MOCK_VPCS: Record<string, { id: string; name: string }[]> = {
+  "us-east-1": [
+    { id: "vpc-0a1b2c3d4e5f67890", name: "prod-vpc" },
+    { id: "vpc-0f9e8d7c6b5a43210", name: "default" },
+  ],
+  "us-west-2": [{ id: "vpc-0123456789abcdef0", name: "staging-vpc" }],
+  "eu-west-1": [{ id: "vpc-0fedcba9876543210", name: "eu-prod-vpc" }],
+  "ap-south-1": [{ id: "vpc-0abcdef1234567890", name: "india-vpc" }],
+};
+
+export const DEFAULT_MOCK_VPC = { id: "vpc-0000000000000001", name: "default" };
+
+/** VPC options for a region; every region gets at least the default VPC. */
+export function vpcsForRegion(region: string): { id: string; name: string }[] {
+  return MOCK_VPCS[region] ?? [DEFAULT_MOCK_VPC];
+}
 
 /** Flashbar auto-dismiss delay in milliseconds. */
 export const NOTIFICATION_TTL_MS = 8_000;
