@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { PagePlaceholder } from "@/components/common/PagePlaceholder";
+import { ComingSoon } from "@/components/common/ComingSoon";
 
 export const metadata: Metadata = { title: "Traffic policies" };
 
 export default function TrafficPoliciesPage() {
   return (
-    <PagePlaceholder
+    <ComingSoon
       title="Traffic policies"
       breadcrumbs={[{ text: "Traffic flow" }, { text: "Traffic policies" }]}
     />

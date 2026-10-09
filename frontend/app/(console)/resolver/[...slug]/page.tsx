@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PagePlaceholder } from "@/components/common/PagePlaceholder";
+import { ComingSoon } from "@/components/common/ComingSoon";
 import { RESOLVER_PAGES } from "@/lib/constants";
 
 interface Params {
@@ -20,5 +20,5 @@ export default async function ResolverPage({ params }: Params) {
   const { slug } = await params;
   const title = titleFor(slug);
   if (!title) notFound();
-  return <PagePlaceholder title={title} breadcrumbs={[{ text: "Resolver" }, { text: title }]} />;
+  return <ComingSoon title={title} breadcrumbs={[{ text: "Resolver" }, { text: title }]} />;
 }
