@@ -304,46 +304,59 @@ async function expectZoneCountUnchanged(page: Page) {
 
 test.describe("edit and delete hosted zone", () => {
   test("edits the description and tags from the list", async ({ page }) => {
-    await selectRow(page, "dev.example.net");
+    // Work on a dedicated zone so the seeded data never drifts between runs.
+    const name = uniqueName("edit");
+    const created = await page.request.post("/api/hostedzones", {
+      data: {
+        name,
+        type: "public",
+        description: "Before edit",
+        tags: [{ key: "Environment", value: "staging" }],
+      },
+    });
+    expect(created.ok(), await created.text()).toBe(true);
+    await page.reload();
+    await filterByText(page, name);
+    await selectRow(page, name);
     await page.getByTestId("edit-zone").click();
     const modal = page.getByTestId("edit-zone-modal");
     await expect(modal.getByRole("heading", { name: "Edit hosted zone" })).toBeVisible();
-    await expect(modal.getByText("dev.example.net")).toBeVisible();
+    await expect(modal.getByText(name)).toBeVisible();
     await expect(modal.getByText("Public hosted zone")).toBeVisible();
+    await expect(modal.getByLabel("Tag 1 key")).toHaveValue("Environment");
 
     const description = `Edited by Playwright ${Date.now()}`;
     await page.getByTestId("edit-zone-description").locator("textarea").fill(description);
+    // Keep the existing key, change its value, and add a second tag.
+    await modal.getByLabel("Tag 1 value").fill("production");
     await modal.getByRole("button", { name: "Add new tag" }).click();
-    const tagIndex = await modal.getByLabel(/Tag \d+ key/).count();
-    await modal.getByLabel(`Tag ${tagIndex} key`).fill("EditedBy");
-    await modal.getByLabel(`Tag ${tagIndex} value`).fill("playwright");
+    await modal.getByLabel("Tag 2 key").fill("EditedBy");
+    await modal.getByLabel("Tag 2 value").fill("playwright");
     await page.getByTestId("edit-zone-save").click();
 
     await expect(modal).toBeHidden();
     await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
       "Hosted zone updated successfully",
     );
-    await expect(rowByName(page, "dev.example.net")).toContainText(description);
+    await expect(rowByName(page, name)).toContainText(description);
 
     // The change survives a reload (it is persisted server-side).
     await page.reload();
-    await expect(rowByName(page, "dev.example.net")).toContainText(description);
+    await filterByText(page, name);
+    await expect(rowByName(page, name)).toContainText(description);
 
-    // Restore the seed description and drop the extra tag.
-    await selectRow(page, "dev.example.net");
-    await page.getByTestId("edit-zone").click();
-    await page
-      .getByTestId("edit-zone-description")
-      .locator("textarea")
-      .fill("Developer sandboxes and preview environments");
-    await page
-      .getByTestId("edit-zone-modal")
-      .getByRole("button", { name: "Remove" })
-      .last()
-      .click();
-    await page.getByTestId("edit-zone-save").click();
-    await expect(page.getByTestId("edit-zone-modal")).toBeHidden();
-    await expect(rowByName(page, "dev.example.net")).toContainText("Developer sandboxes");
+    const id = await findZoneIdByName(page, name);
+    expect(id).not.toBeNull();
+    const detail = (await (await page.request.get(`/api/hostedzones/${id}`)).json()) as {
+      tags: { key: string; value: string }[];
+    };
+    expect(detail.tags).toHaveLength(2);
+    expect(detail.tags).toEqual(
+      expect.arrayContaining([
+        { key: "Environment", value: "production" },
+        { key: "EditedBy", value: "playwright" },
+      ]),
+    );
   });
 
   test("Escape closes the edit modal without saving", async ({ page }) => {
