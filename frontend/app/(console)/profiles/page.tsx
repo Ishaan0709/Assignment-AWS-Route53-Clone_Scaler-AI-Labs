@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PagePlaceholder } from "@/components/common/PagePlaceholder";
+import { ComingSoon } from "@/components/common/ComingSoon";
 
 export const metadata: Metadata = { title: "Profiles" };
 
 export default function ProfilesPage() {
-  return <PagePlaceholder title="Profiles" breadcrumbs={[{ text: "Profiles" }]} />;
+  return <ComingSoon title="Profiles" breadcrumbs={[{ text: "Profiles" }]} />;
 }

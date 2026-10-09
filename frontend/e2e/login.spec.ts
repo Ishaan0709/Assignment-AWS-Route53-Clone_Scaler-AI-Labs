@@ -98,6 +98,7 @@ test.describe("console shell", () => {
     await nav.getByRole("link", { name: "Query logging" }).click();
     await expect(page).toHaveURL(/\/resolver\/query-logging$/);
     await expect(page.getByRole("heading", { level: 1, name: "Query logging" })).toBeVisible();
+    await expect(page.getByTestId("coming-soon")).toContainText("This feature is coming soon");
     await expect(page.getByRole("navigation", { name: "Breadcrumbs" })).toContainText("Resolver");
 
     await nav.getByRole("link", { name: "Registered domains" }).click();
