@@ -261,6 +261,25 @@ def test_update_zone_without_tags_keeps_them(auth_client: TestClient) -> None:
     assert body["tags"] == [{"key": "k", "value": "v"}]
 
 
+def test_update_zone_keeps_existing_tag_key_and_adds_another(auth_client: TestClient) -> None:
+    """Regression: re-sending an existing key used to hit the (zone_id, key) unique index."""
+    zone = create_zone(auth_client, tags=[{"key": "Environment", "value": "dev"}])
+    response = auth_client.put(
+        f"/api/hostedzones/{zone['id']}",
+        json={
+            "tags": [
+                {"key": "Environment", "value": "prod"},
+                {"key": "Team", "value": "platform"},
+            ]
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["tags"] == [
+        {"key": "Environment", "value": "prod"},
+        {"key": "Team", "value": "platform"},
+    ]
+
+
 def test_update_zone_can_clear_description(auth_client: TestClient) -> None:
     zone = create_zone(auth_client, description="old")
     body = auth_client.put(f"/api/hostedzones/{zone['id']}", json={"description": ""}).json()
