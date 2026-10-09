@@ -90,11 +90,12 @@ Each of those routes uses one Coming Soon page with a link back to Hosted zones.
 
 ### Bonus
 
-- [x] Import DNS records from a BIND zone file (parse preview, then confirm)
-- [ ] Export a hosted zone as JSON or BIND (API exists; console dropdown is next)
-- [x] Dark mode toggle, persisted
-- [ ] Keyboard shortcuts (specified below, not wired yet)
-- [x] Bulk delete of records (zones list is still single-select)
+- [x] Import DNS records from a BIND zone file (parse preview with a per-type breakdown, then confirm)
+- [x] Export a hosted zone as JSON or BIND from the zone page
+- [x] Dark mode toggle, persisted, using Cloudscape color tokens. Light is the default unless the OS prefers dark
+- [x] Keyboard shortcuts
+- [x] Bulk delete of records, and bulk delete of hosted zones with a result per zone
+- [x] Comfortable or compact density, persisted
 
 ## Tech stack
 
@@ -351,17 +352,18 @@ The browser uses the same rules as `backend/app/services/validators.py`.
 
 ## Keyboard shortcuts
 
-Not active in the UI yet. The intended set:
+Active anywhere in the console except while typing in a field or while a dialog is open.
 
 | Keys | Action |
 | --- | --- |
-| `/` | Focus the filter |
-| `c` | Create a zone on the list, or a record on a zone |
+| `/` | Focus the filter on the current page |
+| `c` | Create a hosted zone on the list, or a record on a zone page |
 | `g` then `h` | Go to Hosted zones |
 | `?` | Open the shortcuts help modal |
-| `Esc` | Close a modal or the help dialog |
+| `Esc` | Close the shortcuts dialog |
+| `Alt+S` | Focus the console search field |
 
-They will be ignored while typing in a field, and ignored while a modal is open except `Esc`.
+The settings menu also switches light and dark mode, and comfortable or compact density. Both choices are stored in the browser. Compact is off until you choose it.
 
 ## Design decisions
 
@@ -381,7 +383,7 @@ Counts from the latest local and CI runs:
 | Suite | Count |
 | --- | --- |
 | Backend pytest | 268 |
-| Frontend Vitest | 164 |
+| Frontend Vitest | 170 |
 | Playwright | 41 |
 
 Playwright covers sign-in, the shell, hosted zones, and record create, edit, delete, filter, import and tags. Screenshot capture is opt-in (`SCREENSHOTS=1`) and is not part of the 41.
@@ -407,18 +409,13 @@ docs/             assignment, guide, screenshots, progress
 ## Known limitations
 
 - The app does not answer real DNS queries or call AWS.
-- Export is implemented on the API and not yet as a console dropdown.
-- Keyboard shortcuts and the density toggle are not wired.
-- The zones table selects one row. Record bulk delete is implemented.
 - Latency, failover and geolocation fields are stored inside the set id.
 - Query logging, test record and DNSSEC signing are mocked.
 - Two Playwright workers against one SQLite file race. CI and local runs use one worker.
 - The Railway disk is a volume at `/data`. A redeploy without that volume would start from the seed again.
+- Docker Compose is defined. `docker compose up` was not run here because the Docker engine was not running.
 
 ## Future work
 
-- JSON and BIND export from the zone page.
-- Keyboard shortcuts and a comfortable/compact density toggle.
-- Multi-select delete on the hosted zones list.
 - Another screenshot pass for the record screens.
 - Alembic migrations if the schema needs to change in place.
