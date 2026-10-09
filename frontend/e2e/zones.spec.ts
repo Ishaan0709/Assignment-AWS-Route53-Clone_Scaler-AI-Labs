@@ -231,8 +231,10 @@ test.describe("create hosted zone", () => {
     );
     await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
     await expect(page.getByText("Created by Playwright")).toBeVisible();
-    await expect(page.getByText("Environment = e2e")).toBeVisible();
     await expect(page.getByText("Public hosted zone")).toBeVisible();
+    await page.getByRole("tab", { name: /Hosted zone tags \(1\)/ }).click();
+    await expect(page.getByLabel("Tag 1 key")).toHaveValue("Environment");
+    await expect(page.getByLabel("Tag 1 value")).toHaveValue("e2e");
   });
 
   test("creates a private zone with a region and VPC", async ({ page }) => {
