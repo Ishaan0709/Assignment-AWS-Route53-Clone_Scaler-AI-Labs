@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { accessibleColumnHeader, clickableColumnHeader, signIn } from "./helpers";
 
@@ -41,18 +41,38 @@ function uniqueName(prefix: string): string {
 }
 
 const recordsTable = (page: Page) => page.getByTestId("records-table");
-const recordRows = (page: Page) => recordsTable(page).locator("tbody tr");
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Row accessible name includes the record name and type, including the selection checkbox label. */
 function rowFor(page: Page, name: string, type: string) {
-  return recordRows(page)
-    .filter({ hasText: name })
-    .filter({ has: page.getByRole("cell", { name: type, exact: true }) });
+  return recordsTable(page).getByRole("row", {
+    name: new RegExp(`\\b${escapeRegExp(name)}\\.[^\\s]+\\s${type}\\b`),
+  });
 }
 
 function defaultRow(page: Page, type: "NS" | "SOA") {
-  return recordRows(page)
-    .filter({ has: page.getByTestId("default-record") })
-    .filter({ has: page.getByRole("cell", { name: type, exact: true }) });
+  return recordsTable(page).getByRole("row", { name: new RegExp(`${type} \\(default\\)`) });
+}
+
+/**
+ * The table checkbox toggles from a click on its wrapper. A normal click is
+ * swallowed because the selection label calls preventDefault on mousedown.
+ */
+async function selectRow(row: Locator) {
+  const checkbox = row.getByRole("checkbox");
+  await checkbox.evaluate((input) => {
+    const target = input.parentElement?.parentElement ?? input;
+    target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(checkbox).toBeChecked();
+}
+
+async function expectZone(page: Page, zoneId: string) {
+  await expect(page).toHaveURL(new RegExp(`/hostedzones/${zoneId}$`));
+  await expect(recordsTable(page)).toBeVisible();
 }
 
 async function createZone(page: Page, name: string): Promise<ZoneSummary> {
@@ -113,11 +133,11 @@ test.describe("hosted zone detail", () => {
       await expect(page.getByRole("tab", { name: "DNSSEC signing" })).toBeVisible();
       await expect(page.getByRole("tab", { name: /Hosted zone tags \(0\)/ })).toBeVisible();
 
-      const defaults = recordRows(page).filter({ has: page.getByTestId("default-record") });
-      await expect(defaults).toHaveCount(2);
-      await defaults.first().getByRole("checkbox").check({ force: true });
-      await defaults.nth(1).getByRole("checkbox").check({ force: true });
+      await expect(page.getByTestId("default-record")).toHaveCount(2);
+      await selectRow(defaultRow(page, "NS"));
       await expect(page.getByTestId("delete-record")).toBeDisabled();
+      await expect(page.getByTestId("edit-record")).toBeEnabled();
+      await selectRow(defaultRow(page, "SOA"));
       await expect(page.getByTestId("edit-record")).toBeDisabled();
 
       await page.getByRole("tab", { name: "DNSSEC signing" }).click();
@@ -150,8 +170,7 @@ test.describe("hosted zone detail", () => {
   test("edits the default NS TTL and leaves the name read-only", async ({ page }) => {
     const zone = await openZone(page, "ns");
     try {
-      const ns = defaultRow(page, "NS");
-      await ns.getByRole("checkbox").check({ force: true });
+      await selectRow(defaultRow(page, "NS"));
       await expect(page.getByTestId("delete-record")).toBeDisabled();
       await page.getByTestId("edit-record").click();
       await expect(page.getByTestId("record-locked")).toBeVisible();
@@ -161,6 +180,7 @@ test.describe("hosted zone detail", () => {
       await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
         "Record updated successfully",
       );
+      await expectZone(page, zone.id);
       await page.reload();
       await expect(defaultRow(page, "NS")).toContainText("60");
     } finally {
@@ -185,22 +205,24 @@ test.describe("record create, edit and delete", () => {
         await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
           "1 record created",
         );
+        await expectZone(page, zone.id);
         await page.reload();
         const row = rowFor(page, record.name, record.type);
         await expect(row).toBeVisible();
         await expect(row).toContainText("300");
 
-        await row.getByRole("checkbox").check({ force: true });
+        await selectRow(row);
         await page.getByTestId("edit-record").click();
         await chooseTtl(page, "1m");
         await page.getByTestId("record-form-submit").click();
         await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
           "Record updated successfully",
         );
+        await expectZone(page, zone.id);
         await page.reload();
         await expect(rowFor(page, record.name, record.type)).toContainText("60");
 
-        await rowFor(page, record.name, record.type).getByRole("checkbox").check({ force: true });
+        await selectRow(rowFor(page, record.name, record.type));
         await page.getByTestId("delete-record").click();
         await expect(page.getByTestId("delete-records-modal")).toContainText(record.type);
         await page.getByTestId("delete-records-confirm").click();
@@ -241,6 +263,7 @@ test.describe("record create, edit and delete", () => {
       await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
         "1 record created",
       );
+      await expectZone(page, zone.id);
       const alias = rowFor(page, "cdn", "A");
       await expect(alias).toContainText("Yes");
       await expect(alias).toContainText("cloudfront.net");
@@ -254,6 +277,7 @@ test.describe("record create, edit and delete", () => {
       await page.getByTestId("record-set-id-0").locator("input").fill("blue");
       await page.getByTestId("record-weight-0").locator("input").fill("70");
       await page.getByTestId("record-form-submit").click();
+      await expectZone(page, zone.id);
       await page.reload();
       await expect(rowFor(page, "api", "A")).toContainText("Weight: 70");
       await expect(rowFor(page, "api", "A")).toContainText("blue");
@@ -275,9 +299,10 @@ test.describe("record create, edit and delete", () => {
       await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
         "2 records created",
       );
+      await expectZone(page, zone.id);
       await page.reload();
-      await rowFor(page, "one", "A").getByRole("checkbox").check({ force: true });
-      await rowFor(page, "two", "A").getByRole("checkbox").check({ force: true });
+      await selectRow(rowFor(page, "one", "A"));
+      await selectRow(rowFor(page, "two", "A"));
       await page.getByTestId("delete-record").click();
       await expect(page.getByTestId("delete-records-modal")).toContainText("one");
       await expect(page.getByTestId("delete-records-modal")).toContainText("two");
@@ -300,7 +325,7 @@ test.describe("record create, edit and delete", () => {
       await page.getByTestId("record-name-0").locator("input").fill("web");
       await page.getByTestId("record-values-0").locator("textarea").fill("192.0.2.20");
       await page.getByTestId("record-form-submit").click();
-      await expect(page.getByTestId("records-table")).toBeVisible();
+      await expectZone(page, zone.id);
       await openSelect(page, "record-type-filter");
       const filtered = page.waitForRequest(
         (request) => request.url().includes("/records") && request.url().includes("type=A"),
@@ -308,9 +333,7 @@ test.describe("record create, edit and delete", () => {
       await page.getByRole("option", { name: "A", exact: true }).click();
       await filtered;
       await expect(rowFor(page, "web", "A")).toBeVisible();
-      await expect(
-        recordRows(page).filter({ has: page.getByRole("cell", { name: "NS", exact: true }) }),
-      ).toHaveCount(0);
+      await expect(defaultRow(page, "NS")).toHaveCount(0);
 
       const sorted = page.waitForRequest(
         (request) => request.url().includes("/records") && request.url().includes("sort=type"),
