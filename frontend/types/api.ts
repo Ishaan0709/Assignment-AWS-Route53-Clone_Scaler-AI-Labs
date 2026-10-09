@@ -240,7 +240,7 @@ export interface ImportSummary {
   records: ImportRecordPreview[];
 }
 
-export type ExportFormat = "json" | "bind";
+export type ExportFormat = "json" | "bind" | "csv";
 
 // ---------------------------------------------------------------------------
 // Shared list query parameters

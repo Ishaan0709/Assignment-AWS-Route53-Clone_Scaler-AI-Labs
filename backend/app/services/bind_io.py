@@ -1,4 +1,4 @@
-"""BIND zone-file import (with dry-run preview) and JSON/BIND export.
+"""BIND zone-file import (with dry-run preview) and JSON, BIND and CSV export.
 
 Parsing is done per logical line with dnspython so that each error can be reported with
 its line number and valid lines are still imported.
@@ -6,6 +6,8 @@ its line number and valid lines are still imported.
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import re
 from dataclasses import dataclass, field
@@ -326,7 +328,8 @@ def import_zone_text(db: Session, zone: HostedZone, text: str, *, dry_run: bool)
 
 def export_filename(zone: HostedZone, fmt: str) -> str:
     base = display_name(zone.name)
-    return f"{base}.zone" if fmt == "bind" else f"{base}.json"
+    suffix = {"bind": "zone", "csv": "csv"}.get(fmt, "json")
+    return f"{base}.{suffix}"
 
 
 def export_json(zone: HostedZone, records: list[DnsRecord]) -> str:
@@ -377,3 +380,51 @@ def export_bind(zone: HostedZone, records: list[DnsRecord]) -> str:
             lines.append(f"{record.name.ljust(width)}{ttl}\tIN\t{record.type}\t{value}")
     lines.append("")
     return "\n".join(lines)
+
+
+_CSV_COLUMNS = (
+    "name",
+    "type",
+    "ttl",
+    "routing_policy",
+    "set_identifier",
+    "weight",
+    "is_alias",
+    "alias_target",
+    "evaluate_target_health",
+    "values",
+    "comment",
+    "is_default",
+)
+
+
+def export_csv(zone: HostedZone, records: list[DnsRecord]) -> str:
+    """One row per record. Multiple values are joined with `; ` inside a quoted cell."""
+    del zone
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=_CSV_COLUMNS, lineterminator="\n")
+    writer.writeheader()
+    for record in records:
+        if record.evaluate_target_health is None:
+            health = ""
+        elif record.evaluate_target_health:
+            health = "true"
+        else:
+            health = "false"
+        writer.writerow(
+            {
+                "name": record.name,
+                "type": record.type,
+                "ttl": "" if record.ttl is None else record.ttl,
+                "routing_policy": record.routing_policy,
+                "set_identifier": record.set_identifier or "",
+                "weight": "" if record.weight is None else record.weight,
+                "is_alias": "true" if record.is_alias else "false",
+                "alias_target": record.alias_target or "",
+                "evaluate_target_health": health,
+                "values": "; ".join(record.value_list),
+                "comment": record.comment or "",
+                "is_default": "true" if record.is_default else "false",
+            }
+        )
+    return buffer.getvalue()
