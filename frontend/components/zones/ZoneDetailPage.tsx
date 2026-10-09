@@ -4,34 +4,43 @@ import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import Container from "@cloudscape-design/components/container";
-import Header from "@cloudscape-design/components/header";
+import ExpandableSection from "@cloudscape-design/components/expandable-section";
 import KeyValuePairs from "@cloudscape-design/components/key-value-pairs";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Spinner from "@cloudscape-design/components/spinner";
+import Tabs from "@cloudscape-design/components/tabs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { RouterLink } from "@/components/common/RouterLink";
+import { useEffect, useState } from "react";
+import { QueryLoggingModal } from "@/components/records/QueryLoggingModal";
+import { RecordsTable } from "@/components/records/RecordsTable";
+import { TestRecordModal } from "@/components/records/TestRecordModal";
 import { ConsolePage } from "@/components/layout/ConsolePage";
 import { DeleteZoneModal } from "@/components/zones/DeleteZoneModal";
 import { EditZoneModal } from "@/components/zones/EditZoneModal";
+import { ZoneTagsTab } from "@/components/zones/ZoneTagsTab";
 import { useZone } from "@/hooks/useZones";
 import { isApiError } from "@/lib/api";
-import { ROUTES } from "@/lib/constants";
+import { APP_TITLE, ROUTES } from "@/lib/constants";
 import { capitalize, displayName, formatDate, formatNumber } from "@/lib/format";
 
 interface ZoneDetailPageProps {
   zoneId: string;
 }
 
-/**
- * Hosted zone detail. Phase 5 ships the header, details panel and the edit /
- * delete actions; the records table and tabs arrive in Phase 6.
- */
+type DetailModal = "edit" | "delete" | "test" | "logging" | null;
+
+/** Hosted zone detail: header actions, details, records, DNSSEC placeholder and tags. */
 export function ZoneDetailPage({ zoneId }: ZoneDetailPageProps) {
   const router = useRouter();
   const zone = useZone(zoneId);
-  const [modal, setModal] = useState<"edit" | "delete" | null>(null);
+  const [modal, setModal] = useState<DetailModal>(null);
+  const [tab, setTab] = useState("records");
   const breadcrumbsBase = [{ text: "Hosted zones", href: ROUTES.hostedZones }];
+  const name = zone.data ? displayName(zone.data.name) : zoneId;
+
+  useEffect(() => {
+    if (zone.data) document.title = `${displayName(zone.data.name)} | ${APP_TITLE}`;
+  }, [zone.data]);
 
   if (zone.isPending) {
     return (
@@ -47,7 +56,7 @@ export function ZoneDetailPage({ zoneId }: ZoneDetailPageProps) {
     );
   }
 
-  if (zone.isError) {
+  if (zone.isError || !zone.data) {
     const notFound = isApiError(zone.error) && zone.error.isNotFound;
     return (
       <ConsolePage
@@ -68,14 +77,13 @@ export function ZoneDetailPage({ zoneId }: ZoneDetailPageProps) {
         >
           {notFound
             ? `No hosted zone with ID ${zoneId} exists in this account.`
-            : zone.error.message}
+            : (zone.error?.message ?? "Unknown error")}
         </Alert>
       </ConsolePage>
     );
   }
 
   const data = zone.data;
-  const name = displayName(data.name);
 
   return (
     <ConsolePage
@@ -86,69 +94,102 @@ export function ZoneDetailPage({ zoneId }: ZoneDetailPageProps) {
           <Button onClick={() => setModal("delete")} data-testid="detail-delete-zone">
             Delete zone
           </Button>
+          <Button onClick={() => setModal("test")} data-testid="test-record">
+            Test record
+          </Button>
+          <Button onClick={() => setModal("logging")} data-testid="configure-query-logging">
+            Configure query logging
+          </Button>
           <Button onClick={() => setModal("edit")} data-testid="detail-edit-zone">
             Edit hosted zone
           </Button>
         </SpaceBetween>
       }
     >
-      <Container header={<Header variant="h2">Hosted zone details</Header>}>
-        <KeyValuePairs
-          columns={3}
-          items={[
-            { label: "Hosted zone name", value: name },
-            { label: "Type", value: `${capitalize(data.type)} hosted zone` },
-            { label: "Hosted zone ID", value: data.id },
-            { label: "Record count", value: formatNumber(data.record_count) },
-            { label: "Description", value: data.description || "-" },
-            { label: "Created by", value: data.created_by },
-            { label: "Created", value: formatDate(data.created_at) },
-            { label: "Last updated", value: formatDate(data.updated_at) },
+      <SpaceBetween size="l">
+        <ExpandableSection
+          headerText="Hosted zone details"
+          defaultExpanded
+          data-testid="zone-details"
+        >
+          <KeyValuePairs
+            columns={3}
+            items={[
+              { label: "Hosted zone name", value: name },
+              { label: "Type", value: `${capitalize(data.type)} hosted zone` },
+              { label: "Hosted zone ID", value: data.id },
+              { label: "Description", value: data.description || "-" },
+              { label: "Record count", value: formatNumber(data.record_count) },
+              {
+                label: "Name servers",
+                value:
+                  data.name_servers.length > 0 ? (
+                    <SpaceBetween size="xxs">
+                      {data.name_servers.map((ns) => (
+                        <Box key={ns} fontSize="body-s">
+                          {ns}
+                        </Box>
+                      ))}
+                    </SpaceBetween>
+                  ) : (
+                    "-"
+                  ),
+              },
+              { label: "Created by", value: data.created_by },
+              { label: "Created", value: formatDate(data.created_at) },
+              ...(data.type === "private"
+                ? [
+                    { label: "VPC region", value: data.vpc_region ?? "-" },
+                    { label: "VPC ID", value: data.vpc_id ?? "-" },
+                  ]
+                : []),
+            ]}
+          />
+        </ExpandableSection>
+        <Tabs
+          activeTabId={tab}
+          onChange={({ detail }) => setTab(detail.activeTabId)}
+          tabs={[
             {
-              label: "Name servers",
-              value:
-                data.name_servers.length > 0 ? (
-                  <SpaceBetween size="xxs">
-                    {data.name_servers.map((ns) => (
-                      <Box key={ns} fontSize="body-s">
-                        {ns}
-                      </Box>
-                    ))}
-                  </SpaceBetween>
-                ) : (
-                  "-"
-                ),
+              id: "records",
+              label: `Records (${formatNumber(data.record_count)})`,
+              content: tab === "records" ? <RecordsTable zoneId={data.id} /> : null,
             },
-            ...(data.type === "private"
-              ? [
-                  { label: "VPC region", value: data.vpc_region ?? "-" },
-                  { label: "VPC ID", value: data.vpc_id ?? "-" },
-                ]
-              : []),
             {
-              label: "Tags",
-              value:
-                data.tags.length > 0
-                  ? data.tags
-                      .map((tag) => `${tag.key}${tag.value ? ` = ${tag.value}` : ""}`)
-                      .join(", ")
-                  : "-",
+              id: "dnssec",
+              label: "DNSSEC signing",
+              content:
+                tab === "dnssec" ? (
+                  <Container data-testid="dnssec-placeholder">
+                    <Box variant="p" color="text-body-secondary">
+                      DNSSEC signing is coming soon.
+                    </Box>
+                  </Container>
+                ) : null,
+            },
+            {
+              id: "tags",
+              label: `Hosted zone tags (${formatNumber(data.tags.length)})`,
+              content:
+                tab === "tags" ? (
+                  <ZoneTagsTab key={`${data.id}-${data.updated_at}`} zone={data} />
+                ) : null,
             },
           ]}
         />
-      </Container>
-      <Box padding={{ top: "l" }}>
-        <Alert type="info" header="Records">
-          The records table for this hosted zone is coming in the next release. Go back to the{" "}
-          <RouterLink href={ROUTES.hostedZones}>hosted zones list</RouterLink>.
-        </Alert>
-      </Box>
+      </SpaceBetween>
       <EditZoneModal zone={modal === "edit" ? data : null} onDismiss={() => setModal(null)} />
       <DeleteZoneModal
         zone={modal === "delete" ? data : null}
         onDismiss={() => setModal(null)}
         onDeleted={() => router.push(ROUTES.hostedZones)}
       />
+      <TestRecordModal
+        zoneName={data.name}
+        visible={modal === "test"}
+        onDismiss={() => setModal(null)}
+      />
+      <QueryLoggingModal visible={modal === "logging"} onDismiss={() => setModal(null)} />
     </ConsolePage>
   );
 }

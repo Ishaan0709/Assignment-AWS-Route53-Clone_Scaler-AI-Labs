@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
 export const DEMO = {
@@ -23,4 +23,17 @@ export async function signIn(page: Page) {
   // Generous timeout: the first visit compiles the route on a cold dev server.
   await page.waitForURL(/\/hostedzones$/, { timeout: 45_000 });
   await expect(page.getByTestId("account-label")).toHaveText("admin @ 1234-5678-9012");
+}
+
+/**
+ * The sticky header renders every column header twice: an aria-hidden copy that
+ * receives pointer events (first in DOM order) and the accessible one. Click the
+ * former and assert on the latter.
+ */
+export function clickableColumnHeader(table: Locator, name: string) {
+  return table.locator("th").filter({ hasText: name }).first();
+}
+
+export function accessibleColumnHeader(table: Locator, name: string) {
+  return table.getByRole("columnheader", { name });
 }
