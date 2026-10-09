@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import path from "node:path";
 import { DEMO, fillLogin, signIn } from "./helpers";
@@ -197,5 +197,73 @@ test.describe("hosted zones screenshots", () => {
     await expect(page.getByTestId("zones-error")).toBeVisible();
     await page.waitForTimeout(300);
     await page.screenshot({ path: shot("zones-error") });
+  });
+});
+
+async function checkRow(row: Locator) {
+  const checkbox = row.getByRole("checkbox");
+  await checkbox.evaluate((input) => {
+    const target = input.parentElement?.parentElement ?? input;
+    target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(checkbox).toBeChecked();
+}
+
+test.describe("record screenshots", () => {
+  test.skip(!enabled, "set SCREENSHOTS=1 to capture");
+
+  test("records, create, default edit, delete, import, tags", async ({ page }) => {
+    test.setTimeout(90_000);
+    await signIn(page);
+    const name = `shot-${Date.now().toString(36)}.e2e-test.com`;
+    const response = await page.request.post("/api/hostedzones", {
+      data: { name, type: "public" },
+    });
+    expect(response.ok()).toBe(true);
+    const zone = (await response.json()) as { id: string };
+    const records = page.getByTestId("records-table");
+    const defaultNs = records.getByRole("row", { name: /NS \(default\)/ });
+    try {
+      await page.goto(`/hostedzones/${zone.id}`);
+      await expect(records).toBeVisible();
+      await page.screenshot({ path: shot("records-table"), fullPage: true });
+
+      await page.getByTestId("create-record").click();
+      await page.getByTestId("record-name-0").locator("input").fill("www");
+      await page.getByTestId("record-values-0").locator("textarea").fill("192.0.2.10");
+      await page.screenshot({ path: shot("record-create"), fullPage: true });
+
+      await page.goto(`/hostedzones/${zone.id}`);
+      await checkRow(defaultNs);
+      await page.getByTestId("edit-record").click();
+      await expect(page.getByTestId("record-locked")).toBeVisible();
+      await page.screenshot({ path: shot("record-edit-default"), fullPage: true });
+
+      const created = await page.request.post(`/api/hostedzones/${zone.id}/records`, {
+        data: [{ name: "www", type: "A", ttl: 300, values: ["192.0.2.10"] }],
+      });
+      expect(created.ok()).toBe(true);
+      await page.goto(`/hostedzones/${zone.id}`);
+      const www = records.getByRole("row", { name: /\bwww\.[^\s]+\sA\b/ });
+      await checkRow(www);
+      await expect(page.getByTestId("delete-record")).toBeEnabled();
+      await page.getByTestId("delete-record").click();
+      await expect(page.getByTestId("delete-records-modal")).toBeVisible();
+      await page.screenshot({ path: shot("record-delete-modal") });
+      await page.getByRole("button", { name: "Cancel" }).click();
+
+      await page.getByTestId("import-zone-file").click();
+      await page.getByTestId("import-text").locator("textarea").fill("www 300 IN A 192.0.2.10");
+      await page.getByTestId("import-parse").click();
+      await expect(page.getByTestId("import-summary")).toBeVisible();
+      await page.screenshot({ path: shot("record-import-modal") });
+
+      await page.keyboard.press("Escape");
+      await page.getByRole("tab", { name: /Hosted zone tags/ }).click();
+      await expect(page.getByTestId("zone-tags")).toBeVisible();
+      await page.screenshot({ path: shot("zone-tags"), fullPage: true });
+    } finally {
+      await page.request.delete(`/api/hostedzones/${zone.id}?force=true`);
+    }
   });
 });

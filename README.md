@@ -18,9 +18,13 @@ The same values are on the sign-in page hint.
 
 ## Screenshots
 
-Shots already captured from the console. Record-form and import screenshots are added in the final pass.
+Shots captured from the console, including the record table, create form, default NS edit, delete confirmation, import preview and tags.
 
 ![Hosted zones list](docs/screenshots/zones-list.png)
+
+![Records](docs/screenshots/records-table.png)
+
+![Create a record](docs/screenshots/record-create.png)
 
 ![Create hosted zone](docs/screenshots/zone-create.png)
 
@@ -32,7 +36,7 @@ Shots already captured from the console. Record-form and import screenshots are 
 
 ![Sign in](docs/screenshots/login.png)
 
-More: [filtered list](docs/screenshots/zones-list-filtered.png), [no matches](docs/screenshots/zones-no-match.png), [empty](docs/screenshots/zones-empty.png), [error](docs/screenshots/zones-error.png), [private zone form](docs/screenshots/zone-create-private.png), [duplicate name](docs/screenshots/zone-create-duplicate-error.png), [delete blocked](docs/screenshots/zone-delete-blocked.png), [light shell](docs/screenshots/shell-light.png), [dark shell](docs/screenshots/shell-dark.png), [dark list](docs/screenshots/zones-list-dark.png).
+More: [filtered list](docs/screenshots/zones-list-filtered.png), [no matches](docs/screenshots/zones-no-match.png), [empty](docs/screenshots/zones-empty.png), [error](docs/screenshots/zones-error.png), [private zone form](docs/screenshots/zone-create-private.png), [duplicate name](docs/screenshots/zone-create-duplicate-error.png), [delete blocked](docs/screenshots/zone-delete-blocked.png), [light shell](docs/screenshots/shell-light.png), [dark shell](docs/screenshots/shell-dark.png), [dark list](docs/screenshots/zones-list-dark.png), [default NS edit](docs/screenshots/record-edit-default.png), [delete record](docs/screenshots/record-delete-modal.png), [import preview](docs/screenshots/record-import-modal.png), [zone tags](docs/screenshots/zone-tags.png).
 
 ## Features
 
@@ -91,7 +95,7 @@ Each of those routes uses one Coming Soon page with a link back to Hosted zones.
 ### Bonus
 
 - [x] Import DNS records from a BIND zone file (parse preview with a per-type breakdown, then confirm)
-- [x] Export a hosted zone as JSON or BIND from the zone page
+- [x] Export a hosted zone as JSON, BIND or CSV from the zone page
 - [x] Dark mode toggle, persisted, using Cloudscape color tokens. Light is the default unless the OS prefers dark
 - [x] Keyboard shortcuts
 - [x] Bulk delete of records, and bulk delete of hosted zones with a result per zone
@@ -323,7 +327,7 @@ Every route below is under `/api` and, except health and login, requires the ses
 | DELETE | `/api/hostedzones/{id}/records/{recordId}` | Delete one record |
 | POST | `/api/hostedzones/{id}/records/bulk-delete` | Delete many. Each id is `deleted`, `skipped` or `not_found` |
 | POST | `/api/hostedzones/{id}/import` | BIND file or pasted text. `dry_run=true` previews |
-| GET | `/api/hostedzones/{id}/export` | `format=json` or `format=bind` |
+| GET | `/api/hostedzones/{id}/export` | `format=json`, `format=bind` or `format=csv` |
 
 Errors are `{ "error": { "code", "message", "fields" } }`.
 
@@ -373,7 +377,7 @@ The settings menu also switches light and dark mode, and comfortable or compact 
 - `record_count` is computed so it cannot drift from the rows.
 - A hosted zone name and type cannot be edited after create, matching Route 53.
 - Routing details that have no column (region, failover, location) are packed into `set_identifier` so they round-trip without a schema change.
-- SQLite is one file, which is enough for this clone. A Railway volume keeps that file across deploys. If the volume is unavailable, startup seeding rebuilds the demo data and that is called out here.
+- SQLite is one file, which is enough for this clone. Alembic owns the schema on file databases (`alembic/versions/0001_initial.py`). A database created before migrations is stamped at head so existing rows stay. Tests still build an in-memory database with `create_all`. A Railway volume keeps the file across deploys.
 - Tests run in GitHub Actions on every push to `main`: Ruff, pytest on Python 3.12 and 3.13, Prettier, ESLint, `tsc`, Vitest, `next build`, and Playwright.
 
 ## Testing
@@ -382,7 +386,7 @@ Counts from the latest local and CI runs:
 
 | Suite | Count |
 | --- | --- |
-| Backend pytest | 268 |
+| Backend pytest | 271 |
 | Frontend Vitest | 170 |
 | Playwright | 41 |
 
@@ -417,5 +421,4 @@ docs/             assignment, guide, screenshots, progress
 
 ## Future work
 
-- Another screenshot pass for the record screens.
-- Alembic migrations if the schema needs to change in place.
+- Another screenshot pass for any screen that still differs from the AWS console.
