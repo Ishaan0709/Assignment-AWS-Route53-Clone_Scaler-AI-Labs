@@ -228,18 +228,31 @@ def create_zone(db: Session, data: HostedZoneCreate) -> HostedZone:
     return get_zone(db, zone.id)
 
 
+def _set_tags(db: Session, zone: HostedZone, tags: Sequence[TagIn]) -> None:
+    """Replace the zone's tags.
+
+    The old rows are flushed away *before* the new ones are inserted; otherwise the
+    unit of work inserts first and trips the ``(zone_id, key)`` unique constraint
+    whenever a key is kept.
+    """
+    new_tags = _validate_tags(tags)
+    zone.tags.clear()
+    db.flush()
+    zone.tags.extend(new_tags)
+
+
 def update_zone(db: Session, zone: HostedZone, data: HostedZoneUpdate) -> HostedZone:
     """Only ``description`` and ``tags`` change; name and type are immutable like Route 53."""
     if "description" in data.model_fields_set:
         zone.description = (data.description or "").strip() or None
     if data.tags is not None:
-        zone.tags = _validate_tags(data.tags)
+        _set_tags(db, zone, data.tags)
     db.commit()
     return get_zone(db, zone.id)
 
 
 def replace_tags(db: Session, zone: HostedZone, tags: Sequence[TagIn]) -> HostedZone:
-    zone.tags = _validate_tags(tags)
+    _set_tags(db, zone, tags)
     db.commit()
     return get_zone(db, zone.id)
 
