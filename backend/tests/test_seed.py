@@ -90,3 +90,8 @@ def test_seed_many_adds_thirty_zones_and_skips_existing(db: Session) -> None:
     assert seed(db, many=True) == {"zones_created": len(SHOWCASE_ZONES) + 30}
     assert seed(db, many=True) == {"zones_created": 0}
     assert db.scalar(select(func.count()).select_from(HostedZone)) == len(SHOWCASE_ZONES) + 30
+
+
+def test_seed_if_empty_honours_many_flag(db: Session) -> None:
+    assert seed_if_empty(db, many=True) is True
+    assert db.scalar(select(func.count()).select_from(HostedZone)) == len(SHOWCASE_ZONES) + 30

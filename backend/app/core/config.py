@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     session_ttl_days: int = 7
     allowed_origins: list[str] = ["http://localhost:3000"]
     seed_on_startup: bool = True
+    # Also seed the 30 small "tenant" zones so pagination is visible (demo / e2e).
+    seed_many: bool = False
 
 
 @lru_cache

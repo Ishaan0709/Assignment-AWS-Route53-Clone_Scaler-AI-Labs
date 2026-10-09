@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     create_all()
     if settings.seed_on_startup:
         with SessionLocal() as db:
-            if seed_if_empty(db):
+            if seed_if_empty(db, many=settings.seed_many):
                 log.info("Database was empty; demo data seeded.")
     yield
 
