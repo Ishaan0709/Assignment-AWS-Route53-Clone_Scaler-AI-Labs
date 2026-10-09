@@ -17,6 +17,7 @@ import { TestRecordModal } from "@/components/records/TestRecordModal";
 import { ConsolePage } from "@/components/layout/ConsolePage";
 import { DeleteZoneModal } from "@/components/zones/DeleteZoneModal";
 import { EditZoneModal } from "@/components/zones/EditZoneModal";
+import { ExportZoneButton } from "@/components/zones/ExportZoneButton";
 import { ZoneTagsTab } from "@/components/zones/ZoneTagsTab";
 import { useZone } from "@/hooks/useZones";
 import { isApiError } from "@/lib/api";
@@ -100,6 +101,7 @@ export function ZoneDetailPage({ zoneId }: ZoneDetailPageProps) {
           <Button onClick={() => setModal("logging")} data-testid="configure-query-logging">
             Configure query logging
           </Button>
+          <ExportZoneButton zoneId={data.id} fileBase={name} />
           <Button onClick={() => setModal("edit")} data-testid="detail-edit-zone">
             Edit hosted zone
           </Button>
