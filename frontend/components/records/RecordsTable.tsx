@@ -262,7 +262,7 @@ export function RecordsTable({ zoneId }: RecordsTableProps) {
           </Header>
         }
         filter={
-          <div className={styles.filters} data-testid="records-filter" data-hotkey="filter">
+          <div className={styles.filters} data-testid="records-filter" data-hotkey-filter>
             <div className={styles.property}>
               <PropertyFilter
                 query={query}

@@ -6,10 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Notifications } from "@/components/common/Notifications";
+import { ShortcutsModal } from "@/components/common/ShortcutsModal";
 import { BottomBar } from "@/components/layout/BottomBar";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { AUTH_QUERY_KEY } from "@/hooks/useAuth";
+import { useHotkeys } from "@/hooks/useHotkeys";
 import { useNotifications } from "@/hooks/useNotifications";
 import { configureApi, resetApiConfig } from "@/lib/api";
 import { ROUTES } from "@/lib/constants";
@@ -27,6 +29,7 @@ export function ConsoleShell({ user, children }: ConsoleShellProps) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const notify = useNotifications();
+  const { helpOpen, closeHelp } = useHotkeys();
 
   // Expired sessions: drop the cached user, explain, and go to the login page
   // with a client-side navigation instead of a full reload.
@@ -61,6 +64,7 @@ export function ConsoleShell({ user, children }: ConsoleShellProps) {
         }}
       />
       <BottomBar />
+      <ShortcutsModal visible={helpOpen} onDismiss={closeHelp} />
     </>
   );
 }
