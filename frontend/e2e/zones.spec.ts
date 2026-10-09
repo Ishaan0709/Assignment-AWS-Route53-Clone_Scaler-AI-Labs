@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
-import { signIn } from "./helpers";
+import { accessibleColumnHeader, clickableColumnHeader, signIn } from "./helpers";
 
 /**
  * Hosted zones list / create / edit / delete flows against the seeded backend
@@ -28,9 +28,8 @@ const rowByName = (page: Page, name: string) =>
  * copy that receives pointer events (first in DOM order) and the accessible
  * one inside the table. Click the former, assert on the latter.
  */
-const columnHeader = (page: Page, name: string) => table(page).getByRole("columnheader", { name });
-const clickableColumnHeader = (page: Page, name: string) =>
-  table(page).locator("th").filter({ hasText: name }).first();
+const columnHeader = (page: Page, name: string) => accessibleColumnHeader(table(page), name);
+const clickableHeader = (page: Page, name: string) => clickableColumnHeader(table(page), name);
 
 async function expectCount(page: Page, count: number) {
   await expect(table(page).getByRole("heading", { name: /Hosted zones/ })).toContainText(
@@ -164,11 +163,11 @@ test.describe("hosted zones list", () => {
           response.url().includes(`order=${order}`),
       );
 
-    await Promise.all([sortedRequest("asc"), clickableColumnHeader(page, "Record count").click()]);
+    await Promise.all([sortedRequest("asc"), clickableHeader(page, "Record count").click()]);
     await expect(recordCountHeader).toHaveAttribute("aria-sort", "ascending");
     await expect(rows(page).first()).toContainText("tenant-");
 
-    await Promise.all([sortedRequest("desc"), clickableColumnHeader(page, "Record count").click()]);
+    await Promise.all([sortedRequest("desc"), clickableHeader(page, "Record count").click()]);
     await expect(recordCountHeader).toHaveAttribute("aria-sort", "descending");
     await expect(rows(page).first()).toContainText("example.com");
   });

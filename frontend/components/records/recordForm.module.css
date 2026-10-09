@@ -1,0 +1,28 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.property {
+  flex: 1 1 320px;
+  min-width: 220px;
+}
+
+.select {
+  flex: 0 1 210px;
+  min-width: 160px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nameInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}

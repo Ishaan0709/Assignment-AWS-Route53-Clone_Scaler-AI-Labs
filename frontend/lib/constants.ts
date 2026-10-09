@@ -67,6 +67,7 @@ export const STORAGE_KEYS = {
   density: "r53.density",
   rememberedAccount: "r53.rememberedAccount",
   zonesPreferences: "r53.zones.preferences",
+  recordsPreferences: "r53.records.preferences",
 } as const;
 
 /** Regions offered when associating a VPC with a private hosted zone (mocked). */
