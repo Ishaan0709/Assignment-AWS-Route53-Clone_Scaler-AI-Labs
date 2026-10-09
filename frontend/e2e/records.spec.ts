@@ -133,6 +133,16 @@ test.describe("hosted zone detail", () => {
       await expect(page.getByRole("tab", { name: "DNSSEC signing" })).toBeVisible();
       await expect(page.getByRole("tab", { name: /Hosted zone tags \(0\)/ })).toBeVisible();
 
+      const jsonDownload = page.waitForEvent("download");
+      await page.getByTestId("export-zone").click();
+      await page.getByRole("menuitem", { name: "JSON" }).click();
+      expect((await jsonDownload).suggestedFilename()).toBe(`${zone.label}.json`);
+
+      const bindDownload = page.waitForEvent("download");
+      await page.getByTestId("export-zone").click();
+      await page.getByRole("menuitem", { name: "BIND" }).click();
+      expect((await bindDownload).suggestedFilename()).toBe(`${zone.label}.zone`);
+
       await expect(page.getByTestId("default-record")).toHaveCount(2);
       await selectRow(defaultRow(page, "NS"));
       await expect(page.getByTestId("delete-record")).toBeDisabled();
