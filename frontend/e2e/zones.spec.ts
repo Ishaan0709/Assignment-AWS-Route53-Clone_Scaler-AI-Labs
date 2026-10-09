@@ -28,8 +28,7 @@ const rowByName = (page: Page, name: string) =>
  * copy that receives pointer events (first in DOM order) and the accessible
  * one inside the table. Click the former, assert on the latter.
  */
-const columnHeader = (page: Page, name: string) =>
-  table(page).getByRole("columnheader", { name });
+const columnHeader = (page: Page, name: string) => table(page).getByRole("columnheader", { name });
 const clickableColumnHeader = (page: Page, name: string) =>
   table(page).locator("th").filter({ hasText: name }).first();
 
