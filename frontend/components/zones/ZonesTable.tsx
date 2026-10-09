@@ -199,16 +199,18 @@ export function ZonesTable({
         </Header>
       }
       filter={
-        <PropertyFilter
-          query={query}
-          onChange={({ detail }) => setQuery(detail)}
-          filteringProperties={ZONE_FILTERING_PROPERTIES}
-          filteringOptions={ZONE_FILTERING_OPTIONS}
-          filteringPlaceholder="Filter hosted zones by property or value"
-          filteringAriaLabel="Filter hosted zones"
-          countText={isFiltered && zones.data ? pluralize(total, "match", "matches") : undefined}
-          expandToViewport
-        />
+        <div data-hotkey-filter>
+          <PropertyFilter
+            query={query}
+            onChange={({ detail }) => setQuery(detail)}
+            filteringProperties={ZONE_FILTERING_PROPERTIES}
+            filteringOptions={ZONE_FILTERING_OPTIONS}
+            filteringPlaceholder="Filter hosted zones by property or value"
+            filteringAriaLabel="Filter hosted zones"
+            countText={isFiltered && zones.data ? pluralize(total, "match", "matches") : undefined}
+            expandToViewport
+          />
+        </div>
       }
       pagination={
         <Pagination
