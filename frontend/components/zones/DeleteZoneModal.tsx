@@ -56,7 +56,7 @@ function DeleteZoneBody({
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const blocked = hasNonDefaultRecords(zone);
-  const confirmed = confirmation.trim().toLowerCase() === "delete";
+  const confirmed = confirmation.trim() === "delete";
   const name = displayName(zone.name);
 
   const onDelete = async () => {
