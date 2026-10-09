@@ -6,15 +6,10 @@ body {
 }
 
 body {
-  background: #f2f3f3;
-  color: #0f141a;
+  background: var(--color-background-layout-main-y4565g, #ffffff);
+  color: var(--color-text-body-default-b2us04, #0f141a);
   font-family: "Open Sans", "Helvetica Neue", Roboto, Arial, sans-serif;
   font-size: 14px;
   line-height: 20px;
   -webkit-font-smoothing: antialiased;
-}
-
-body.awsui-dark-mode {
-  background: #0f141a;
-  color: #e9ebed;
 }

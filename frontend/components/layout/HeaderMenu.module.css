@@ -49,10 +49,10 @@
   max-width: 360px;
   margin-top: 2px;
   padding: 4px 0;
-  border: 1px solid #c6c6cd;
+  border: 1px solid var(--color-border-divider-default-diwd4w, #c6c6cd);
   border-radius: 8px;
-  background: #ffffff;
-  color: #0f141a;
+  background: var(--color-background-container-content-mjfil9, #ffffff);
+  color: var(--color-text-body-default-b2us04, #0f141a);
   box-shadow: 0 4px 20px rgba(0, 7, 22, 0.25);
   z-index: 2000;
   font-size: 14px;
@@ -68,7 +68,7 @@
 
 .header {
   padding: 12px 16px;
-  border-bottom: 1px solid #e9ebed;
+  border-bottom: 1px solid var(--color-border-divider-default-diwd4w, #c6c6cd);
 }
 
 .list {
@@ -96,17 +96,17 @@
 
 .item:hover,
 .item:focus-visible {
-  background: #f0fbff;
-  color: #006ce0;
+  background: var(--color-background-item-selected-dotkup, #f0fbff);
+  color: var(--color-text-link-default-qabnuk, #006ce0);
   outline: none;
 }
 
 .item:focus-visible {
-  box-shadow: inset 2px 0 0 #006ce0;
+  box-shadow: inset 2px 0 0 var(--color-text-link-default-qabnuk, #006ce0);
 }
 
 .item[aria-disabled="true"] {
-  color: #8c8c94;
+  color: var(--color-text-body-secondary-66ygbb, #424650);
   cursor: not-allowed;
 }
 
@@ -123,29 +123,29 @@
 
 .itemDescription {
   font-size: 12px;
-  color: #656871;
+  color: var(--color-text-body-secondary-66ygbb, #424650);
 }
 
 .check {
   display: inline-flex;
 }
 
-/* The panel is light in both themes; override the header's white icon color. */
+/* Icons inside the panel follow the current mode. */
 .panel svg {
-  color: #006ce0;
+  color: var(--color-text-link-default-qabnuk, #006ce0);
 }
 
 .divider {
   height: 1px;
   margin: 4px 0;
-  background: #e9ebed;
+  background: var(--color-border-divider-default-diwd4w, #c6c6cd);
 }
 
 .label {
   padding: 8px 16px 4px;
   font-size: 12px;
   font-weight: 700;
-  color: #656871;
+  color: var(--color-text-body-secondary-66ygbb, #424650);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
