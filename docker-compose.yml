@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: sqlite:///./data/route53.db
+      SECRET_KEY: local-dev-only-change-me
+      COOKIE_SECURE: "false"
+      ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      SEED_ON_STARTUP: "true"
+      SEED_MANY: "true"
+    volumes:
+      - route53-data:/app/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_URL: http://backend:8000
+    environment:
+      API_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  route53-data:
