@@ -70,7 +70,7 @@ export function ZonesPage() {
       <EditZoneModal
         zone={modal === "edit" ? selectedZone : null}
         onDismiss={closeModal}
-        onSaved={setSelectedZone}
+        onSaved={(zone) => setSelectedZones([zone])}
       />
       <DeleteZoneModal
         zone={modal === "delete" ? selectedZone : null}
