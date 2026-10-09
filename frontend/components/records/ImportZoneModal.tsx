@@ -14,6 +14,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useImportZoneFile } from "@/hooks/useZoneFile";
 import { isApiError } from "@/lib/api";
 import { pluralize } from "@/lib/format";
+import { importTypeBreakdown } from "@/lib/importPreview";
 import type { ImportSummary } from "@/types/api";
 
 interface ImportZoneModalProps {
@@ -72,6 +73,8 @@ function ImportZoneBody({ zoneId, onDismiss }: { zoneId: string; onDismiss: () =
     }
   };
 
+  const byType = preview ? importTypeBreakdown(preview.records) : "";
+
   return (
     <SpaceBetween size="m">
       <Box variant="p" color="text-body-secondary">
@@ -118,6 +121,7 @@ function ImportZoneBody({ zoneId, onDismiss }: { zoneId: string; onDismiss: () =
         <SpaceBetween size="s">
           <Alert type={preview.errors.length > 0 ? "warning" : "info"} data-testid="import-summary">
             {`${pluralize(preview.imported, "record")} ready to import. ${pluralize(preview.skipped, "record")} skipped. ${pluralize(preview.errors.length, "error")}.`}
+            {byType ? ` By type: ${byType}.` : ""}
           </Alert>
           {preview.errors.length > 0 ? (
             <Box data-testid="import-errors">
